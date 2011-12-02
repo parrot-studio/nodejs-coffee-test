@@ -1,4 +1,7 @@
 express = require 'express'
+
+Comment = require('./comment').Comment
+MemcachedClient = require('./memcached').MemcachedClient
 #util = require 'util'
 
 # app
@@ -20,14 +23,17 @@ app.configure 'development', ->
 app.configure 'production', -> app.use express.errorHandler()
 
 # main
-Comment = require('./comment').Comment
-com = new Comment 'Hello', 'World!'
-
-#console.log util.inspect com
+com = new Comment 'Hello', 'World! from memcached'
+mclient = new MemcachedClient()
+mclient.set('test', com, 60)
 
 app.get '/', (req, res) ->
-  res.render 'index',
-    massage: com.say()
+  render_message = (rsl) ->
+    com = new Comment rsl.name, rsl.body
+    res.render 'index',
+      massage: com.say()
+
+  mclient.get 'test', render_message
 
 app.listen 3000
 
